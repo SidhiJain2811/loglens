@@ -130,24 +130,43 @@ def execute_reproduction_test():
         raise HTTPException(status_code=404, detail="test_repro.py has not been generated yet.")
 
     try:
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "utf-8"
         proc = subprocess.run(
             [sys.executable, str(test_path)],
             capture_output=True,
             text=True,
-            timeout=10
+            encoding="utf-8",
+            errors="replace",
+            env=env,
+            timeout=8
         )
+        combined_output = proc.stdout or ""
+        if proc.stderr:
+            combined_output = f"{combined_output}\n{proc.stderr}".strip()
+
         return {
             "exit_code": proc.returncode,
             "passed": proc.returncode == 0,
             "stdout": proc.stdout,
-            "stderr": proc.stderr
+            "stderr": proc.stderr,
+            "output": combined_output
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "exit_code": -1,
+            "passed": False,
+            "stdout": "",
+            "stderr": "Execution timed out after 8s",
+            "output": ">>> TEST TIMED OUT: Could not reach backend in 8 seconds. Please check if server is active."
         }
     except Exception as e:
         return {
             "exit_code": -1,
             "passed": False,
             "stdout": "",
-            "stderr": f"Failed to execute reproduction test: {str(e)}"
+            "stderr": str(e),
+            "output": f">>> TEST RUN ERROR: {str(e)}"
         }
 
 # Mount static frontend

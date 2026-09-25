@@ -407,18 +407,44 @@ function App() {
                 </strong>
               </div>
 
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "12px" }}>
                 <button
                   onClick={handleRunReproTest}
                   disabled={isRunningTest}
-                  className="btn btn-outline"
+                  className="btn btn-blue"
                 >
-                  {isRunningTest ? "Running Test..." : "▶️ Run Standalone Repro Test (python test_repro.py)"}
+                  {isRunningTest ? "⏳ Executing test_repro.py..." : "▶️ Run Standalone Repro Test (python test_repro.py)"}
                 </button>
                 <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
-                  (Identical test runs both before & after fix)
+                  (Exact same test runs before and after fix)
                 </span>
               </div>
+
+              {/* Status Banner */}
+              {isRunningTest && (
+                <div style={{ padding: "8px 12px", borderRadius: "6px", backgroundColor: "rgba(88, 166, 255, 0.15)", border: "1px solid rgba(88, 166, 255, 0.4)", color: "var(--accent-blue)", fontSize: "0.85rem", marginBottom: "10px" }}>
+                  ⏳ Running reproduction script against backend...
+                </div>
+              )}
+
+              {!isRunningTest && testOutput && (
+                <div style={{
+                  padding: "10px 14px",
+                  borderRadius: "6px",
+                  backgroundColor: testOutput.passed ? "rgba(63, 185, 80, 0.15)" : "rgba(248, 81, 73, 0.15)",
+                  border: `1px solid ${testOutput.passed ? "rgba(63, 185, 80, 0.4)" : "rgba(248, 81, 73, 0.4)"}`,
+                  color: testOutput.passed ? "var(--accent-green-bright)" : "var(--accent-red-bright)",
+                  fontSize: "0.88rem",
+                  marginBottom: "12px"
+                }}>
+                  <strong>{testOutput.passed ? "✅ TEST RESULT: PASS" : "❌ TEST RESULT: FAIL"}</strong>
+                  <div style={{ fontSize: "0.82rem", marginTop: "4px", color: "var(--text-bright)" }}>
+                    {testOutput.passed
+                      ? "The fix is verified! The backend accepted the date and returned HTTP 200."
+                      : "Expected pre-fix state: The test reproduced the bug (HTTP 400 Invalid date format). Click 'Apply Backend Date Fix' above and run again!"}
+                  </div>
+                </div>
+              )}
 
               {/* Terminal Output Window */}
               <div className="terminal-window">
@@ -433,11 +459,11 @@ function App() {
                 <div
                   className="terminal-body"
                   style={{
-                    color: testOutput ? (testOutput.passed ? "var(--accent-green-bright)" : "var(--accent-red-bright)") : "var(--text-muted)"
+                    color: testOutput ? (testOutput.passed ? "var(--accent-green-bright)" : "#f85149") : "var(--text-muted)"
                   }}
                 >
                   {testOutput ? (
-                    testOutput.stdout || testOutput.stderr
+                    testOutput.output || testOutput.stdout || testOutput.stderr
                   ) : (
                     "$ Click 'Run Standalone Repro Test' or run `python test_repro.py` in your terminal to verify failure/pass state."
                   )}
