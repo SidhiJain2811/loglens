@@ -8,29 +8,50 @@ from backend.models import CreateIssueRequest
 
 logger = logging.getLogger("loglens.github")
 
+CODE_EVIDENCE_SNIPPET = '''def parse_and_validate_date(date_str: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+    # Strict validation: Only YYYY-MM-DD is accepted
+    try:
+        parsed = datetime.strptime(date_str, "%Y-%m-%d")
+        return True, parsed.strftime("%Y-%m-%d"), None
+    except ValueError:
+        return False, "", {
+            "error": "Invalid date format",
+            "expected": "YYYY-MM-DD",
+            "received": date_str
+        }'''
+
 def build_issue_markdown(request: CreateIssueRequest) -> Tuple[str, str]:
     """
     Constructs the issue title and structured markdown body matching LogLens specifications:
-    - ## Steps to Reproduce
+    - ## Observed Failure
+    - ## Steps to Reproduce (Relevant Breadcrumbs)
+    - ## Environment
     - ## Technical Evidence
-    - ## AI Suggestion
-    - ## Verification
+    - ## AI Suggestion (with Code Evidence)
+    - ## Verification (Reproduction Status)
     """
     title = request.custom_title or "Attendance submission fails with invalid date format"
     
-    # 1. Steps to Reproduce
+    # 1. Observed Failure
+    observed_failure = "Attendance submission fails with HTTP 400 when submitting regional date format (DD/MM/YYYY) instead of ISO-8601 (YYYY-MM-DD)."
+
+    # 2. Steps to Reproduce (Relevant Breadcrumbs)
     steps_lines = []
     for idx, step in enumerate(request.evidence.action_sequence, 1):
         steps_lines.append(f"{idx}. {step}")
     steps_md = "\n".join(steps_lines) if steps_lines else "1. Open Attendance Page\n2. Submit attendance with DD/MM/YYYY date format"
 
-    # 2. Technical Evidence (status code, request body, response body)
+    # 3. Environment
+    env_md = f"""- **App Version**: `{request.evidence.app_version}`
+- **Client OS / Browser**: Windows Web Client
+- **Backend Architecture**: FastAPI / Python 3.13 (In-Memory Data Store)"""
+
+    # 4. Technical Evidence (status code, request body, response body)
     req = request.evidence.failed_request
     tech_md = f"""- **Endpoint**: `{req.method} {req.endpoint}`
 - **Response Status**: `{req.status_code}`
-- **App Version**: `{request.evidence.app_version}`
 
-**Request Payload:**
+**Sanitized Request Payload (PII Scrubbed • Bug Trigger Preserved):**
 ```json
 {json.dumps(req.request_body, indent=2)}
 ```
@@ -40,18 +61,29 @@ def build_issue_markdown(request: CreateIssueRequest) -> Tuple[str, str]:
 {json.dumps(req.response_body, indent=2)}
 ```
 
-> **Privacy Notice**: Sensitive personal details (student ID, email, phone) were scrubbed by LogLens prior to submission. Essential failure parameters (`date`) have been preserved for reproduction."""
+> **Privacy Notice**: Sensitive personal identity fields (student ID, email, phone) were scrubbed by LogLens prior to submission. Essential failure parameters (`date`) have been strictly preserved for reproduction."""
 
-    # 3. AI Suggestion
+    # 5. AI Suggestion & Code Evidence
     ai_text = request.ai_suggestion or "Date parsing in `backend/date_handler.py` strictly requires ISO-8601 YYYY-MM-DD format."
     ai_md = f"""> ⚠️ **AI-Generated Diagnostic (Not Verified Fact)**
-> {ai_text}"""
+> {ai_text}
 
-    # 4. Verification
+**Backend Code Evidence (`backend/date_handler.py`):**
+```python
+{CODE_EVIDENCE_SNIPPET}
+```"""
+
+    # 6. Verification
     verification_md = "No fix has been verified yet. Run the linked reproduction test after applying a fix.\n\n```bash\npython test_repro.py\n```"
 
-    body = f"""## Steps to Reproduce
+    body = f"""## Observed Failure
+{observed_failure}
+
+## Steps to Reproduce
 {steps_md}
+
+## Environment
+{env_md}
 
 ## Technical Evidence
 {tech_md}
@@ -74,6 +106,29 @@ async def create_github_issue(request: CreateIssueRequest) -> Dict[str, Any]:
     token = settings.GITHUB_TOKEN
     owner = settings.GITHUB_OWNER
     repo = settings.GITHUB_REPO
+    req = request.evidence.failed_request
+
+    base_capsule = {
+        "title": title,
+        "body": body,
+        "observed_failure": "Attendance submission rejected with HTTP 400 when submitting regional date format (DD/MM/YYYY).",
+        "breadcrumbs": request.evidence.action_sequence,
+        "environment": {
+            "app_version": request.evidence.app_version,
+            "os": "Windows / Web Client",
+            "backend": "FastAPI / Python 3.13"
+        },
+        "technical_error": {
+            "method": req.method,
+            "endpoint": req.endpoint,
+            "status_code": req.status_code,
+            "request_body": req.request_body,
+            "response_body": req.response_body
+        },
+        "ai_diagnosis": request.ai_suggestion or "Backend strictly enforces ISO-8601 (%Y-%m-%d) format.",
+        "code_evidence": "parse_and_validate_date() in backend/date_handler.py rejects non-ISO formats",
+        "reproduction_script": "python test_repro.py"
+    }
 
     # If valid credentials are present, attempt actual GitHub API call
     if token and owner and repo and token != "ghp_yourPersonalAccessTokenHere":
@@ -87,7 +142,7 @@ async def create_github_issue(request: CreateIssueRequest) -> Dict[str, Any]:
         payload = {
             "title": title,
             "body": body,
-            "labels": ["bug", "loglens-repro-ready"]
+            "labels": ["bug", "loglens-repro-ready", "privacy-filtered"]
         }
 
         try:
@@ -96,16 +151,14 @@ async def create_github_issue(request: CreateIssueRequest) -> Dict[str, Any]:
                 if resp.status_code in (200, 201):
                     data = resp.json()
                     return {
+                        **base_capsule,
                         "is_live": True,
                         "issue_number": data.get("number"),
                         "issue_url": data.get("html_url"),
-                        "title": title,
-                        "body": body,
                         "message": f"Successfully filed GitHub Issue #{data.get('number')} on {owner}/{repo}"
                     }
                 else:
                     logger.warning(f"GitHub API error {resp.status_code}: {resp.text}")
-                    # Return error details alongside web fallback
         except Exception as e:
             logger.error(f"Error calling GitHub API: {e}")
 
@@ -121,11 +174,10 @@ async def create_github_issue(request: CreateIssueRequest) -> Dict[str, Any]:
     web_prefill_url = f"https://github.com/{safe_owner}/{safe_repo}/issues/new?title={encoded_title}&body={encoded_body}"
 
     return {
+        **base_capsule,
         "is_live": False,
         "issue_number": dummy_issue_number,
         "issue_url": mock_url,
         "web_prefill_url": web_prefill_url,
-        "title": title,
-        "body": body,
-        "message": "Demo Mode: Issue formatted successfully. Set GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO in .env to post directly to your live GitHub repository."
+        "message": "Demo/Mock GitHub Mode: Issue formatted successfully. Set GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO in .env to post directly to your live GitHub repository."
     }

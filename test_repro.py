@@ -1,7 +1,7 @@
 """
 LogLens Auto-Generated Reproduction Test
 Workflow: attendance-date-format
-Generated from Diagnostic Evidence (Attendance Verification)
+Generated from Diagnostic Evidence (Issue #42)
 """
 import sys
 import json

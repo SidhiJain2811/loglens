@@ -625,12 +625,101 @@ function App() {
               </div>
             </div>
 
-            {/* Created GitHub Issue Card - High Visibility & GitHub Mock Style */}
-            {createdIssue && (
-              <div className="card" style={{ border: "2px solid var(--accent-blue)", boxShadow: "0 8px 24px rgba(31, 111, 235, 0.25)" }}>
-                <div className="card-header" style={{ alignItems: "flex-start" }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+            {/* Permanent Section: Sanitized Bug Capsule & Structured GitHub Issue */}
+            <div className="card" style={{
+              border: createdIssue ? "2px solid var(--accent-blue)" : "1px solid var(--border-color)",
+              boxShadow: createdIssue ? "0 8px 24px rgba(31, 111, 235, 0.25)" : "none"
+            }}>
+              <div className="card-header" style={{ alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                    <h3 className="card-title" style={{ fontSize: "1.15rem", color: "var(--text-bright)", margin: 0 }}>
+                      📦 Sanitized Bug Capsule / Structured GitHub Issue
+                    </h3>
+                  </div>
+                  <p className="card-subtitle">
+                    User-approved diagnostic evidence • Rule-based privacy filtering • Verifiable reproduction
+                  </p>
+                </div>
+
+                <div>
+                  {createdIssue ? (
+                    createdIssue.is_live ? (
+                      <span className="badge badge-preserved">Live Issue #{createdIssue.issue_number}</span>
+                    ) : (
+                      <span className="badge badge-ai">Demo/Mock GitHub Mode (#{createdIssue.issue_number})</span>
+                    )
+                  ) : (
+                    <span className="badge" style={{ backgroundColor: "rgba(139, 148, 158, 0.15)", color: "var(--text-muted)", border: "1px solid var(--border-color)" }}>
+                      Awaiting Report Approval
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Pre-Approval Blueprint / Placeholder State */}
+              {!createdIssue && (
+                <div style={{ padding: "16px", backgroundColor: "var(--bg-tertiary)", borderRadius: "8px", border: "1px dashed var(--border-color)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "1.3rem" }}>🛡️</span>
+                    <div>
+                      <div style={{ fontWeight: 600, color: "var(--text-bright)", fontSize: "0.92rem" }}>
+                        Bug Capsule Ready to Assemble
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                        Follow the demo workflow to generate and inspect the structured report
+                      </div>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: "0.85rem", color: "var(--text-main)", marginBottom: "14px", lineHeight: 1.6 }}>
+                    Once you submit the failing attendance on the left and approve the privacy-filtered report in the LogLens modal, the complete <strong>Sanitized Bug Capsule</strong> and structured GitHub issue will appear here in <strong>Demo/Mock GitHub Mode</strong> (or live if token is configured).
+                  </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "0.8rem" }}>
+                    <div style={{ padding: "8px 10px", background: "var(--bg-secondary)", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                      <strong style={{ color: "var(--text-bright)" }}>1. Observed Failure:</strong>
+                      <div style={{ color: "var(--text-muted)", marginTop: "2px" }}>Rejection message & expected format</div>
+                    </div>
+                    <div style={{ padding: "8px 10px", background: "var(--bg-secondary)", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                      <strong style={{ color: "var(--text-bright)" }}>2. Relevant Breadcrumbs:</strong>
+                      <div style={{ color: "var(--text-muted)", marginTop: "2px" }}>Numbered sequence of user actions</div>
+                    </div>
+                    <div style={{ padding: "8px 10px", background: "var(--bg-secondary)", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                      <strong style={{ color: "var(--text-bright)" }}>3. Environment:</strong>
+                      <div style={{ color: "var(--text-muted)", marginTop: "2px" }}>App version, platform & backend</div>
+                    </div>
+                    <div style={{ padding: "8px 10px", background: "var(--bg-secondary)", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                      <strong style={{ color: "var(--text-bright)" }}>4. Technical Error:</strong>
+                      <div style={{ color: "var(--text-muted)", marginTop: "2px" }}>PII scrubbed; date kept for repro</div>
+                    </div>
+                    <div style={{ padding: "8px 10px", background: "var(--bg-secondary)", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                      <strong style={{ color: "var(--text-bright)" }}>5. AI Diagnosis & Code:</strong>
+                      <div style={{ color: "var(--text-muted)", marginTop: "2px" }}>LLM cause with date_handler snippet</div>
+                    </div>
+                    <div style={{ padding: "8px 10px", background: "var(--bg-secondary)", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                      <strong style={{ color: "var(--text-bright)" }}>6. Reproduction Status:</strong>
+                      <div style={{ color: "var(--text-muted)", marginTop: "2px" }}>Linked test_repro.py (FAIL / PASS)</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Active / Populated Bug Capsule & GitHub Issue */}
+              {createdIssue && (
+                <div>
+                  {/* Issue Meta Bar & Quick Actions */}
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "10px",
+                    padding: "12px 14px",
+                    backgroundColor: "var(--bg-tertiary)",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border-color)",
+                    marginBottom: "16px"
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <span className="gh-badge-open">
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                           <path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path>
@@ -638,96 +727,91 @@ function App() {
                         </svg>
                         Open
                       </span>
-                      <h3 className="card-title" style={{ fontSize: "1.2rem", color: "var(--text-bright)", margin: 0 }}>
-                        {createdIssue.title} <span style={{ color: "var(--text-muted)", fontWeight: "normal" }}>#{createdIssue.issue_number}</span>
-                      </h3>
+                      <div>
+                        <strong>{createdIssue.title}</strong>
+                        <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                          {createdIssue.is_live ? `Live on ${systemStatus.github_owner}/${systemStatus.github_repo}` : "Demo/Mock Mode (Simulated Issue #42)"} • Opened via LogLens
+                        </div>
+                      </div>
                     </div>
-                    <div className="gh-issue-meta">
-                      Opened by <strong>Alex Mercer</strong> via LogLens • 0 comments
+
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      {createdIssue.is_live && (
+                        <a
+                          href={createdIssue.issue_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn btn-sm btn-primary"
+                        >
+                          🔗 Open on GitHub ↗
+                        </a>
+                      )}
+                      {createdIssue.web_prefill_url && (
+                        <a
+                          href={createdIssue.web_prefill_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn btn-sm btn-blue"
+                          title="Open pre-filled issue in GitHub web interface"
+                        >
+                          🚀 1-Click GitHub Web Submit ↗
+                        </a>
+                      )}
+                      <button
+                        onClick={handleCopyMarkdown}
+                        className="btn btn-sm btn-outline"
+                      >
+                        {copied ? "✅ Copied Markdown!" : "📋 Copy Issue Markdown"}
+                      </button>
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                    {createdIssue.is_live && (
-                      <a
-                        href={createdIssue.issue_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-sm btn-primary"
-                      >
-                        🔗 View Live on GitHub ↗
-                      </a>
-                    )}
-                    {createdIssue.web_prefill_url && (
-                      <a
-                        href={createdIssue.web_prefill_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-sm btn-blue"
-                        title="Submit directly into your GitHub repo web form"
-                      >
-                        🚀 1-Click GitHub Web Submit ↗
-                      </a>
-                    )}
-                    <button
-                      onClick={handleCopyMarkdown}
-                      className="btn btn-sm btn-outline"
-                    >
-                      {copied ? "✅ Copied Markdown!" : "📋 Copy Markdown"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Status Notice */}
-                <div style={{
-                  padding: "10px 14px",
-                  borderRadius: "6px",
-                  backgroundColor: createdIssue.is_live ? "rgba(63, 185, 80, 0.12)" : "rgba(88, 166, 255, 0.12)",
-                  border: `1px solid ${createdIssue.is_live ? "rgba(63, 185, 80, 0.3)" : "rgba(88, 166, 255, 0.3)"}`,
-                  fontSize: "0.85rem",
-                  color: createdIssue.is_live ? "var(--accent-green-bright)" : "var(--accent-blue)",
-                  marginBottom: "16px"
-                }}>
-                  {createdIssue.message}
-                </div>
-
-                {/* Structured Issue Preview (The 4 LogLens Sections) */}
-                <div className="gh-issue-container">
-                  <div className="gh-issue-header">
-                    <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--text-bright)" }}>
-                      Issue Description Preview (GitHub Markdown)
-                    </span>
-                  </div>
-
-                  <div className="gh-issue-body">
-                    {/* Section 1: Steps to Reproduce */}
+                  {/* Structured Bug Capsule Display */}
+                  <div className="gh-issue-container">
+                    {/* 1. Observed Failure */}
                     <div className="gh-card-section">
-                      <div className="gh-section-heading">## Steps to Reproduce</div>
-                      <ol style={{ paddingLeft: "20px", margin: 0 }}>
-                        {rawEvidence?.action_sequence?.map((step, idx) => (
+                      <div className="gh-section-heading">## Observed Failure</div>
+                      <p style={{ margin: 0, fontSize: "0.88rem", color: "var(--text-bright)" }}>
+                        {createdIssue.observed_failure || "Attendance submission fails with HTTP 400 when submitting regional date format (DD/MM/YYYY) instead of ISO-8601 (YYYY-MM-DD)."}
+                      </p>
+                    </div>
+
+                    {/* 2. Relevant Breadcrumbs */}
+                    <div className="gh-card-section">
+                      <div className="gh-section-heading">## Steps to Reproduce (Relevant Breadcrumbs)</div>
+                      <ol style={{ paddingLeft: "20px", margin: 0, fontSize: "0.85rem" }}>
+                        {(createdIssue.breadcrumbs || rawEvidence?.action_sequence || [
+                          "Opened attendance page",
+                          "Selected course: CS101",
+                          "Selected date: 25/09/2026",
+                          "Clicked 'Submit Attendance' button"
+                        ]).map((step, idx) => (
                           <li key={idx} style={{ marginBottom: "4px" }}>{step}</li>
-                        )) || (
-                          <>
-                            <li>Opened attendance page</li>
-                            <li>Selected course: CS101</li>
-                            <li>Selected date: 25/09/2026</li>
-                            <li>Clicked 'Submit Attendance' button</li>
-                          </>
-                        )}
+                        ))}
                       </ol>
                     </div>
 
-                    {/* Section 2: Technical Evidence */}
+                    {/* 3. Environment */}
+                    <div className="gh-card-section">
+                      <div className="gh-section-heading">## Environment</div>
+                      <ul style={{ paddingLeft: "20px", margin: 0, fontSize: "0.85rem" }}>
+                        <li><strong>App Version:</strong> <code>{createdIssue.environment?.app_version || "v1.2.4-beta"}</code></li>
+                        <li><strong>Client OS / Platform:</strong> <code>{createdIssue.environment?.os || "Windows Web Client"}</code></li>
+                        <li><strong>Backend Architecture:</strong> <code>{createdIssue.environment?.backend || "FastAPI / Python 3.13"}</code></li>
+                      </ul>
+                    </div>
+
+                    {/* 4. Technical Error & Sanitized Payload */}
                     <div className="gh-card-section">
                       <div className="gh-section-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span>## Technical Evidence</span>
-                        <span className="badge badge-preserved">PII Scrubbed • Date Preserved</span>
+                        <span>## Technical Error & Evidence</span>
+                        <span className="badge badge-preserved">PII Scrubbed • Bug Trigger Preserved</span>
                       </div>
                       <div style={{ fontSize: "0.82rem", marginBottom: "8px" }}>
-                        <strong>Endpoint:</strong> <code>POST /api/attendance</code> &nbsp;|&nbsp; <strong>Status:</strong> <span style={{ color: "var(--accent-red-bright)" }}>400 Bad Request</span>
+                        <strong>Endpoint:</strong> <code>POST /api/attendance</code> &nbsp;|&nbsp; <strong>Response Status:</strong> <span style={{ color: "var(--accent-red-bright)" }}>400 Bad Request</span>
                       </div>
                       <div className="code-block" style={{ fontSize: "0.8rem", maxHeight: "150px" }}>
-{`Request Payload:
+{`Sanitized Request Body:
 {
   "course_id": "CS101",
   "student_name": "Alex Mercer",
@@ -737,53 +821,100 @@ function App() {
   "date": "25/09/2026"
 }
 
-Response Body:
+Server Error Response:
 {
   "error": "Invalid date format",
   "expected": "YYYY-MM-DD",
   "received": "25/09/2026"
 }`}
                       </div>
+                      <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginTop: "6px" }}>
+                        🔒 <strong>Privacy Guarantee:</strong> Sensitive identity fields (email, student_id, phone) were masked with <code>[REDACTED]</code>. The failure condition (<code>date: '25/09/2026'</code>) is strictly preserved for reproduction.
+                      </div>
                     </div>
 
-                    {/* Section 3: AI Suggestion */}
+                    {/* 5. AI Diagnosis with Evidence */}
                     <div className="gh-card-section" style={{ borderLeft: "4px solid var(--accent-blue)" }}>
                       <div className="gh-section-heading" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span>## AI Suggestion</span>
+                        <span>## AI Diagnosis & Code Evidence</span>
                         <span className="badge badge-ai">LLM Diagnostic</span>
                       </div>
-                      <div style={{ fontStyle: "italic", color: "var(--text-bright)", marginBottom: "4px" }}>
-                        "{redactedData?.ai_suggestion || "The backend function parse_and_validate_date in backend/date_handler.py strictly requires ISO-8601 YYYY-MM-DD format and rejects regional DD/MM/YYYY."}"
+                      <div style={{ fontStyle: "italic", color: "var(--text-bright)", marginBottom: "8px", fontSize: "0.88rem" }}>
+                        "{createdIssue.ai_diagnosis || redactedData?.ai_suggestion || "The backend function parse_and_validate_date in backend/date_handler.py strictly requires ISO-8601 YYYY-MM-DD format and rejects regional DD/MM/YYYY."}"
                       </div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                      <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-bright)", marginBottom: "4px" }}>
+                        Supporting Code Citation (<code>backend/date_handler.py</code>):
+                      </div>
+                      <div className="code-block" style={{ fontSize: "0.76rem", maxHeight: "120px" }}>
+{`def parse_and_validate_date(date_str: str) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+    # Strict validation: Only YYYY-MM-DD is accepted
+    try:
+        parsed = datetime.strptime(date_str, "%Y-%m-%d")
+        return True, parsed.strftime("%Y-%m-%d"), None
+    except ValueError:
+        return False, "", {
+            "error": "Invalid date format",
+            "expected": "YYYY-MM-DD",
+            "received": date_str
+        }`}
+                      </div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>
                         ⚠️ AI-Generated Diagnostic (Not Verified Fact)
                       </div>
                     </div>
 
-                    {/* Section 4: Verification */}
+                    {/* 6. Reproduction Status */}
                     <div className="gh-card-section">
-                      <div className="gh-section-heading">## Verification</div>
-                      <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem" }}>
-                        No fix has been verified yet. Run the linked reproduction test after applying a fix:
-                      </p>
-                      <div className="code-block" style={{ margin: 0, padding: "8px 12px" }}>
-                        python test_repro.py
+                      <div className="gh-section-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span>## Reproduction & Verification Status</span>
+                        {testOutput ? (
+                          testOutput.passed ? (
+                            <span className="badge badge-preserved">VERIFIED PASS (200 OK)</span>
+                          ) : (
+                            <span className="badge" style={{ backgroundColor: "rgba(248, 81, 73, 0.15)", color: "var(--accent-red-bright)", border: "1px solid rgba(248, 81, 73, 0.4)" }}>
+                              CONFIRMED FAIL (400)
+                            </span>
+                          )
+                        ) : (
+                          <span className="badge" style={{ backgroundColor: "var(--bg-tertiary)", color: "var(--text-muted)", border: "1px solid var(--border-color)" }}>
+                            Ready to Run
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ fontSize: "0.85rem", marginBottom: "8px" }}>
+                        <strong>Reproduction Test Script:</strong> <code>test_repro.py</code>
+                      </div>
+                      <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "8px" }}>
+                        {testOutput ? (
+                          testOutput.passed ? (
+                            <span style={{ color: "var(--accent-green-bright)" }}>
+                              ✅ Fix confirmed! The standalone test script ran and succeeded with HTTP 200.
+                            </span>
+                          ) : (
+                            <span style={{ color: "var(--accent-red-bright)" }}>
+                              🔴 Reproduction confirmed! The standalone test script replicated the exact HTTP 400 failure.
+                            </span>
+                          )
+                        ) : (
+                          "Click 'Run Standalone Repro Test' above or execute `python test_repro.py` in your terminal to verify failure/pass state."
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Collapsible Raw Markdown Viewer */}
-                <details style={{ marginTop: "14px", cursor: "pointer", fontSize: "0.85rem" }}>
-                  <summary style={{ color: "var(--accent-blue)", fontWeight: 500 }}>
-                    View Raw Markdown Source Payload
-                  </summary>
-                  <div className="code-block" style={{ marginTop: "8px", maxHeight: "200px" }}>
-                    {createdIssue.body}
-                  </div>
-                </details>
-              </div>
-            )}
+                  {/* Collapsible Raw Markdown Viewer */}
+                  <details style={{ marginTop: "14px", cursor: "pointer", fontSize: "0.85rem" }}>
+                    <summary style={{ color: "var(--accent-blue)", fontWeight: 500 }}>
+                      View Raw Markdown Source Payload
+                    </summary>
+                    <div className="code-block" style={{ marginTop: "8px", maxHeight: "200px" }}>
+                      {createdIssue.body}
+                    </div>
+                  </details>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>
