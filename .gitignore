@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.env
+.venv/
+env/
+venv/
+.idea/
+.vscode/
+*.log
+test_repro_*.py
+!test_repro.py
