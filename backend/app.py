@@ -60,6 +60,26 @@ def get_system_status():
         "records_count": len(attendance_records)
     }
 
+from pydantic import BaseModel
+class UpdateConfigRequest(BaseModel):
+    github_token: str = ""
+    github_owner: str = ""
+    github_repo: str = ""
+    gemini_api_key: str = ""
+
+@app.post("/api/config")
+def update_system_config(payload: UpdateConfigRequest):
+    if payload.github_token:
+        settings.GITHUB_TOKEN = payload.github_token.strip()
+    if payload.github_owner:
+        settings.GITHUB_OWNER = payload.github_owner.strip()
+    if payload.github_repo:
+        settings.GITHUB_REPO = payload.github_repo.strip()
+    if payload.gemini_api_key:
+        settings.GEMINI_API_KEY = payload.gemini_api_key.strip()
+        
+    return get_system_status()
+
 @app.post("/api/attendance")
 def submit_attendance(submission: AttendanceSubmission):
     status_code, response_data = process_attendance(submission, settings.FIX_ENABLED)
