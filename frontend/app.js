@@ -1039,6 +1039,8 @@ Server Error Response:
             </div>
           </div>
         </div>
+      )}
+
       {/* MODAL: GitHub Integration Settings */}
       {isSettingsOpen && (
         <div className="modal-overlay">
