@@ -1,7 +1,7 @@
 """
 LogLens Auto-Generated Reproduction Test
 Workflow: attendance-date-format
-Generated from Diagnostic Evidence (Issue #42)
+Generated from Diagnostic Evidence (Local Diagnostic)
 """
 import sys
 import json
@@ -20,9 +20,6 @@ METHOD = "POST"
 PAYLOAD = {
     "course_id": "CS101",
     "student_name": "Alex Mercer",
-    "student_id": "[REDACTED]",
-    "email": "[REDACTED]",
-    "phone": "[REDACTED]",
     "date": "25/09/2026"
 }
 
