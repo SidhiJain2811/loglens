@@ -248,11 +248,72 @@ def analyze_json_code(code: str) -> Tuple[List[FileAnnotation], str, List[str]]:
     ]
     return annotations, improved, checklist
 
+def generate_recreated_commented_code(
+    filename: str,
+    raw_code: str,
+    language: str,
+    annotations: List[FileAnnotation],
+    checklist: List[str]
+) -> str:
+    """
+    Recreates the user's code file with rich inline comments inserted directly
+    at the exact lines where bugs, anti-patterns, or edge cases were discovered.
+    """
+    lines = raw_code.splitlines()
+    comment_char = "#" if language == "python" else ("//" if language == "javascript" else None)
+
+    # Build annotations map by line number (1-indexed)
+    ann_by_line: Dict[int, List[FileAnnotation]] = {}
+    for ann in annotations:
+        ann_by_line.setdefault(ann.line, []).append(ann)
+
+    output_lines: List[str] = []
+
+    if comment_char:
+        # File Header Comments
+        output_lines.append(f"{comment_char} " + "=" * 76)
+        output_lines.append(f"{comment_char} 🛡️ LOGLENS RECREATED CODE FILE: {filename}")
+        output_lines.append(f"{comment_char} Automatic Code Diagnostics & Inline Review Comments")
+        output_lines.append(f"{comment_char} Total issue annotations added: {len(annotations)}")
+        output_lines.append(f"{comment_char} Review Checklist:")
+        for item in checklist:
+            output_lines.append(f"{comment_char}   * {item}")
+        output_lines.append(f"{comment_char} " + "=" * 76)
+        output_lines.append("")
+
+        for idx, line in enumerate(lines, 1):
+            if idx in ann_by_line:
+                # Find line indentation
+                indent = line[:len(line) - len(line.lstrip())]
+                for ann in ann_by_line[idx]:
+                    output_lines.append(f"{indent}{comment_char} " + "-" * 60)
+                    output_lines.append(f"{indent}{comment_char} [LOGLENS COMMENT]: {ann.category} (Severity: {ann.severity.upper()})")
+                    output_lines.append(f"{indent}{comment_char} Issue on Line {idx}: {ann.comment}")
+                    output_lines.append(f"{indent}{comment_char} " + "-" * 60)
+            output_lines.append(line)
+        return "\n".join(output_lines)
+    else:
+        # For JSON, include structured header notice
+        try:
+            parsed_json = json.loads(raw_code)
+            if isinstance(parsed_json, dict):
+                augmented = {
+                    "_loglens_recreated_file_notice": "This file was recreated by LogLens with review commentary.",
+                    "_loglens_checklist": checklist,
+                    "_loglens_annotations": [{"line": a.line, "category": a.category, "severity": a.severity, "comment": a.comment} for a in annotations],
+                    **parsed_json
+                }
+                return json.dumps(augmented, indent=2)
+        except Exception:
+            pass
+        return raw_code
+
 def analyze_and_refactor_file(filename: str, raw_content: str) -> AnalyzeFileResponse:
     """
     Main entrypoint for single-file analysis and smart refactoring.
     Applies security sanitization, identifies bugs/anti-patterns,
-    and returns annotations, improved code, and developer checklist.
+    recreates the file with inline comments, and returns annotations,
+    improved code, and developer checklist.
     """
     ext = Path(filename).suffix.lower()
     if ext not in SUPPORTED_EXTENSIONS:
@@ -272,12 +333,36 @@ def analyze_and_refactor_file(filename: str, raw_content: str) -> AnalyzeFileRes
     else:
         annotations, improved_code, checklist = analyze_json_code(sanitized_code)
 
+    # 3. Recreate the file with inline comments
+    commented_code = generate_recreated_commented_code(
+        filename=filename,
+        raw_code=sanitized_code,
+        language=language,
+        annotations=annotations,
+        checklist=checklist
+    )
+
+    # 4. Persist the recreated file to disk under recreated_files/
+    project_root = Path(__file__).resolve().parent.parent
+    recreated_dir = project_root / "recreated_files"
+    recreated_dir.mkdir(parents=True, exist_ok=True)
+
+    clean_stem = Path(filename).stem
+    clean_suffix = Path(filename).suffix
+    recreated_filename = f"commented_{clean_stem}{clean_suffix}"
+    recreated_path = recreated_dir / recreated_filename
+    recreated_path.write_text(commented_code, encoding="utf-8")
+    rel_path = f"recreated_files/{recreated_filename}"
+
     return AnalyzeFileResponse(
         filename=filename,
         language=language,
         line_count=line_count,
         annotations=annotations,
         improved_code=improved_code,
+        commented_code=commented_code,
+        recreated_file_path=rel_path,
         checklist=checklist,
         sanitized_secrets_count=redaction_count
     )
+

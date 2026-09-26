@@ -270,6 +270,21 @@ def analyze_code_json_endpoint(payload: DirectCodeAnalysisRequest):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Code analysis failed: {str(exc)}")
 
+@app.get("/api/download-recreated-file/{filename}")
+def download_recreated_file(filename: str):
+    """Allows downloading the recreated commented code file directly from disk."""
+    project_root = Path(__file__).resolve().parent.parent
+    # Clean filename to avoid path traversal
+    safe_filename = Path(filename).name
+    recreated_path = project_root / "recreated_files" / safe_filename
+    if not recreated_path.exists() or not recreated_path.is_file():
+        raise HTTPException(status_code=404, detail="Recreated commented file not found.")
+    return FileResponse(
+        recreated_path,
+        media_type="application/octet-stream",
+        filename=safe_filename
+    )
+
 # Mount static frontend
 if frontend_dir.exists():
 

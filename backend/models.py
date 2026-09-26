@@ -73,6 +73,9 @@ class AnalyzeFileResponse(BaseModel):
     line_count: int
     annotations: List[FileAnnotation]
     improved_code: str
+    commented_code: str
+    recreated_file_path: Optional[str] = None
     checklist: List[str]
     sanitized_secrets_count: int
+
 

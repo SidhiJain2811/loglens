@@ -35,6 +35,8 @@ function App() {
   const [fileResult, setFileResult] = useState(null);
   const [fileError, setFileError] = useState(null);
   const [copiedImprovedCode, setCopiedImprovedCode] = useState(false);
+  const [copiedCommentedCode, setCopiedCommentedCode] = useState(false);
+  const [recreatedViewTab, setRecreatedViewTab] = useState("commented");
   const [isDragging, setIsDragging] = useState(false);
   const [checkedChecklist, setCheckedChecklist] = useState({});
 
@@ -225,6 +227,7 @@ export function handleDateInput(rawDate) {
       }
       setFileResult(data);
       setCheckedChecklist({});
+      setRecreatedViewTab("commented");
     } catch (err) {
       setFileError(err.message);
     } finally {
@@ -238,6 +241,30 @@ export function handleDateInput(rawDate) {
       setCopiedImprovedCode(true);
       setTimeout(() => setCopiedImprovedCode(false), 2200);
     }
+  };
+
+  const handleCopyCommentedCode = () => {
+    if (fileResult && fileResult.commented_code) {
+      navigator.clipboard.writeText(fileResult.commented_code);
+      setCopiedCommentedCode(true);
+      setTimeout(() => setCopiedCommentedCode(false), 2200);
+    }
+  };
+
+  const handleDownloadRecreatedFile = () => {
+    if (!fileResult || !fileResult.commented_code) return;
+    const blob = new Blob([fileResult.commented_code], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dlName = fileResult.recreated_file_path
+      ? fileResult.recreated_file_path.split("/").pop()
+      : `commented_${fileResult.filename || "file.py"}`;
+    link.href = url;
+    link.download = dlName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const toggleChecklistItem = (idx) => {
@@ -622,17 +649,69 @@ export function handleDateInput(rawDate) {
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
                     <span className="badge badge-preserved" style={{ fontSize: "0.78rem", padding: "4px 10px" }}>
                       🔒 {fileResult.sanitized_secrets_count} token(s)/PII scrubbed
                     </span>
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline"
-                      onClick={handleCopyImprovedCode}
+                      className="btn btn-sm btn-primary"
+                      onClick={handleDownloadRecreatedFile}
+                      style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
                     >
-                      {copiedImprovedCode ? "✅ Copied!" : "📋 Copy Refactored Code"}
+                      <span>📥</span> Download Recreated File
                     </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline"
+                      onClick={handleCopyCommentedCode}
+                    >
+                      {copiedCommentedCode ? "✅ Copied!" : "📋 Copy Commented Code"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Recreated File Banner */}
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "12px",
+                  marginBottom: "16px",
+                  padding: "14px 18px",
+                  background: "rgba(35, 134, 54, 0.15)",
+                  border: "1px solid rgba(63, 185, 80, 0.4)",
+                  borderRadius: "8px"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <span style={{ fontSize: "1.7rem" }}>📁</span>
+                    <div>
+                      <div style={{ fontWeight: 600, color: "var(--accent-green-bright)", fontSize: "0.98rem" }}>
+                        Code File Recreated with Inline Comments!
+                      </div>
+                      <div style={{ fontSize: "0.82rem", color: "var(--text-main)", marginTop: "3px" }}>
+                        Saved on server: <code style={{ color: "var(--accent-blue)", background: "var(--bg-primary)", padding: "2px 6px", borderRadius: "4px" }}>{fileResult.recreated_file_path || `recreated_files/commented_${fileResult.filename}`}</code>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-primary"
+                      onClick={handleDownloadRecreatedFile}
+                      style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
+                    >
+                      <span>📥</span> Download .py / .js
+                    </button>
+                    <a
+                      href={`/api/download-recreated-file/${(fileResult.recreated_file_path || '').split('/').pop()}`}
+                      className="btn btn-sm btn-outline"
+                      download
+                      style={{ display: "inline-flex", alignItems: "center", gap: "5px", textDecoration: "none" }}
+                    >
+                      <span>💾</span> Direct Server Link
+                    </a>
                   </div>
                 </div>
 
@@ -666,8 +745,8 @@ export function handleDateInput(rawDate) {
                   {/* Left Column: Original Code & Annotations */}
                   <div className="code-panel">
                     <div className="code-panel-header">
-                      <span>Original Code (with Line Annotations)</span>
-                      <span className="badge badge-ai">{fileResult.annotations?.length || 0} Annotations</span>
+                      <span>Original Uploaded Code</span>
+                      <span className="badge badge-ai">{fileResult.annotations?.length || 0} Issues Detected</span>
                     </div>
                     {/* Inline Annotations List */}
                     {fileResult.annotations?.length > 0 && (
@@ -690,20 +769,64 @@ export function handleDateInput(rawDate) {
                     </div>
                   </div>
 
-                  {/* Right Column: Refactored / Improved Code */}
+                  {/* Right Column: Tabbed between Recreated Commented File vs Refactored Code */}
                   <div className="code-panel">
-                    <div className="code-panel-header">
-                      <span>Improved & Idiomatic Code</span>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-primary"
-                        onClick={handleCopyImprovedCode}
-                      >
-                        {copiedImprovedCode ? "✅ Copied!" : "📋 Copy"}
-                      </button>
+                    <div className="code-panel-header" style={{ padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${recreatedViewTab === "commented" ? "btn-primary" : "btn-outline"}`}
+                          onClick={() => setRecreatedViewTab("commented")}
+                          style={{ padding: "4px 10px", fontSize: "0.82rem" }}
+                        >
+                          📝 Recreated File with Comments
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${recreatedViewTab === "improved" ? "btn-primary" : "btn-outline"}`}
+                          onClick={() => setRecreatedViewTab("improved")}
+                          style={{ padding: "4px 10px", fontSize: "0.82rem" }}
+                        >
+                          ✨ Improved & Refactored
+                        </button>
+                      </div>
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        {recreatedViewTab === "commented" ? (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline"
+                              onClick={handleDownloadRecreatedFile}
+                              title="Download recreated commented file"
+                              style={{ padding: "4px 8px", fontSize: "0.78rem" }}
+                            >
+                              📥 Download
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline"
+                              onClick={handleCopyCommentedCode}
+                              style={{ padding: "4px 8px", fontSize: "0.78rem" }}
+                            >
+                              {copiedCommentedCode ? "✅ Copied!" : "📋 Copy"}
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary"
+                            onClick={handleCopyImprovedCode}
+                            style={{ padding: "4px 8px", fontSize: "0.78rem" }}
+                          >
+                            {copiedImprovedCode ? "✅ Copied!" : "📋 Copy"}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="code-panel-body">
-                      {fileResult.improved_code}
+                    <div className="code-panel-body" style={{ maxHeight: "460px", overflowY: "auto" }}>
+                      {recreatedViewTab === "commented"
+                        ? (fileResult.commented_code || "# No commented version available")
+                        : (fileResult.improved_code || "# No improved version available")}
                     </div>
                   </div>
                 </div>

@@ -80,6 +80,17 @@ def check_date(d):
         self.assertGreaterEqual(len(data["annotations"]), 1)
         self.assertIn("parse_and_validate_date", data["improved_code"])
         self.assertGreaterEqual(len(data["checklist"]), 2)
+        
+        # Test recreated file with comments
+        self.assertIn("commented_code", data)
+        self.assertIn("[LOGLENS COMMENT]:", data["commented_code"])
+        self.assertIn("LOGLENS RECREATED CODE FILE: date_checker.py", data["commented_code"])
+        self.assertIn("recreated_files/commented_date_checker.py", data["recreated_file_path"])
+
+        # Test download endpoint
+        dl_res = self.client.get("/api/download-recreated-file/commented_date_checker.py")
+        self.assertEqual(dl_res.status_code, 200)
+        self.assertIn("[LOGLENS COMMENT]:", dl_res.text)
 
     def test_analyze_file_multipart_upload(self):
         sample_js = '''
@@ -95,6 +106,9 @@ function parseInput(val) {
         data = res.json()
         self.assertEqual(data["language"], "javascript")
         self.assertIn("improved_code", data)
+        self.assertIn("commented_code", data)
+        self.assertIn("[LOGLENS COMMENT]:", data["commented_code"])
+        self.assertTrue(Path(root_dir / data["recreated_file_path"]).exists())
 
     def test_analyze_file_unsupported_extension(self):
         files = {"file": ("malicious.exe", b"binary content", "application/octet-stream")}
