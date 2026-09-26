@@ -2,7 +2,8 @@ import os
 import sys
 import subprocess
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, status
+from typing import Optional
+from fastapi import FastAPI, HTTPException, status, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -13,13 +14,18 @@ from backend.models import (
     RawEvidence,
     RedactedEvidence,
     CreateIssueRequest,
-    ToggleFixRequest
+    ToggleFixRequest,
+    AnalyzeRepoRequest,
+    AnalyzeRepoResponse,
+    AnalyzeFileResponse
 )
 from backend.date_handler import process_attendance, attendance_records
 from backend.redactor import redact_evidence
 from backend.ai_service import generate_ai_explanation
 from backend.github_service import create_github_issue
 from backend.test_generator import generate_reproduction_test
+from backend.repo_analyzer import analyze_github_repository
+from backend.file_reviewer import analyze_and_refactor_file
 
 app = FastAPI(
     title="LogLens Diagnostic Platform",
@@ -197,8 +203,76 @@ def execute_reproduction_test():
             "output": f">>> TEST RUN ERROR: {str(e)}"
         }
 
+# ==============================================================================
+# Feature 1: Public GitHub Repository URL Analyzer
+# ==============================================================================
+@app.post("/api/analyze-repo", response_model=AnalyzeRepoResponse)
+async def analyze_repo_endpoint(payload: AnalyzeRepoRequest):
+    """
+    Clones/fetches public repository files, identifies code smells/bugs/format errors,
+    and outputs actionable solutions and a reproduction test snippet.
+    """
+    try:
+        return await analyze_github_repository(payload.repo_url)
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Repository analysis failed: {str(exc)}")
+
+# ==============================================================================
+# Feature 2: File Upload Code Reviewer & Smart Refactorer
+# ==============================================================================
+class DirectCodeAnalysisRequest(BaseModel):
+    filename: str
+    content: str
+
+@app.post("/api/analyze-file", response_model=AnalyzeFileResponse)
+async def analyze_file_endpoint(
+    file: Optional[UploadFile] = File(None),
+    filename: Optional[str] = Form(None),
+    content: Optional[str] = Form(None)
+):
+    """
+    Accepts a file upload (or form fields), applies PII/secret sanitization,
+    identifies bugs/anti-patterns, and returns line-by-line annotations,
+    refactored code, and an actionable developer checklist.
+    """
+    target_filename = ""
+    target_content = ""
+
+    if file is not None:
+        target_filename = file.filename or "uploaded_script.py"
+        raw_bytes = await file.read()
+        try:
+            target_content = raw_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            target_content = raw_bytes.decode("latin-1", errors="replace")
+    elif filename and content is not None:
+        target_filename = filename
+        target_content = content
+    else:
+        raise HTTPException(status_code=400, detail="No file or code content provided for review.")
+
+    try:
+        return analyze_and_refactor_file(target_filename, target_content)
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"File analysis failed: {str(exc)}")
+
+@app.post("/api/analyze-code", response_model=AnalyzeFileResponse)
+def analyze_code_json_endpoint(payload: DirectCodeAnalysisRequest):
+    """Convenience JSON endpoint for direct in-browser code analysis and quick demos."""
+    try:
+        return analyze_and_refactor_file(payload.filename, payload.content)
+    except ValueError as val_err:
+        raise HTTPException(status_code=400, detail=str(val_err))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Code analysis failed: {str(exc)}")
+
 # Mount static frontend
 if frontend_dir.exists():
+
     app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
 
 @app.get("/")

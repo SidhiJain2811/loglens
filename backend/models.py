@@ -37,3 +37,42 @@ class CreateIssueRequest(BaseModel):
 
 class ToggleFixRequest(BaseModel):
     enabled: bool
+
+# Feature 1: GitHub Repo Analyzer Models
+class AnalyzeRepoRequest(BaseModel):
+    repo_url: str = Field(..., example="https://github.com/fastapi/fastapi")
+
+class RepoIssueItem(BaseModel):
+    id: str
+    file: str
+    line: Optional[int] = None
+    type: str
+    severity: str  # 'critical' | 'warning' | 'info'
+    description: str
+    snippet: Optional[str] = None
+
+class AnalyzeRepoResponse(BaseModel):
+    repo: str
+    repo_url: str
+    summary: str
+    scanned_files: List[str]
+    issues_found: List[RepoIssueItem]
+    recommended_fixes: List[str]
+    repro_script_preview: str
+
+# Feature 2: File Upload Code Reviewer Models
+class FileAnnotation(BaseModel):
+    line: int
+    category: str
+    severity: str  # 'high' | 'medium' | 'low'
+    comment: str
+
+class AnalyzeFileResponse(BaseModel):
+    filename: str
+    language: str
+    line_count: int
+    annotations: List[FileAnnotation]
+    improved_code: str
+    checklist: List[str]
+    sanitized_secrets_count: int
+
