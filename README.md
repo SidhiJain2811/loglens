@@ -137,6 +137,22 @@ GEMINI_API_KEY=your_gemini_api_key_here
 
 ---
 
+## 🌐 Feature 1: Public GitHub Repo Analyzer
+- Input any public repository (e.g. `https://github.com/owner/repo`).
+- Analyzes entrypoint files and validation logic for fragile date parsing, naked exceptions, and exposed credentials.
+- Returns high-level summary, structured issues with line numbers & snippets, recommended step-by-step fixes, and an auto-generated reproduction test script.
+- Endpoint: `POST /api/analyze-repo`.
+
+---
+
+## 📁 Feature 2: File Upload Code Reviewer & Refactorer
+- Drag & drop or select files (`.py`, `.js`, `.ts`, `.json`).
+- Automatically sanitizes API tokens, keys, passwords, and PII before processing.
+- Generates line-by-line annotations, improved idiomatic refactored code with comprehensive docstrings and fallbacks, and an actionable developer checklist.
+- Endpoint: `POST /api/analyze-file`.
+
+---
+
 ## 📂 Project Organization
 
 ```text
@@ -147,18 +163,24 @@ loglens/
 ├── backend/
 │   ├── app.py                          # FastAPI application and route orchestration
 │   ├── config.py                       # Configuration & environment loader
-│   ├── models.py                       # Pydantic schemas (attendance, evidence, redactions)
+│   ├── models.py                       # Pydantic schemas (attendance, evidence, repo/file analysis)
 │   ├── date_handler.py                 # Core business logic & demo fix toggle
 │   ├── redactor.py                     # Rule-based PII scrubbing preserving failure conditions
+│   ├── repo_analyzer.py                # Public GitHub repo fetcher, scanner, and repro generator
+│   ├── file_reviewer.py                # File upload sanitizer, line annotator, and smart refactorer
 │   ├── ai_service.py                   # Multi-LLM diagnostic engine with code context
 │   ├── github_service.py               # GitHub REST API client & markdown generator
 │   └── test_generator.py               # Generates standalone test_repro.py scripts
 ├── frontend/
 │   ├── index.html                      # Single page application entry point
-│   ├── app.js                          # React 18 frontend with breadcrumbs & review modal
-│   ├── styles.css                      # Clean developer tool UI theme
+│   ├── app.js                          # React 18 dashboard (Tabs: Workflow, Repo Analyzer, File Reviewer)
+│   ├── styles.css                      # Clean developer tool UI theme with dark-mode tokens
 │   └── vendor/                         # Offline-ready React & Babel bundles
 ├── test_repro.py                       # Runnable reproduction test
+├── test_new_features_browser.py        # Automated headless browser test for all 3 dashboard tabs
+├── tests/
+│   ├── test_loglens.py                 # Unit tests for core reproduction workflow
+│   └── test_features.py                # Unit tests for repo analyzer & file reviewer
 ├── run.py                              # One-command server runner
 └── requirements.txt                    # Minimal Python dependencies
 ```
@@ -168,3 +190,4 @@ loglens/
 ## 🚀 GitHub Actions Integration
 
 LogLens includes `.github/workflows/repro_check.yml` to automatically verify proposed pull request fixes against the reproduction test in CI before merging.
+
